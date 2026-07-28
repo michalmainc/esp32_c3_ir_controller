@@ -1,0 +1,23 @@
+Mam taki pomysł na układ.
+Płytka XIAO ESP32-C3, program VS Code, PlatformIO, framework ESP IDF, FreeRTOS, język C.
+
+Płytka powinna mieć cztery kanały PWM (f=400Hz):
+1 - GPIO2 (PWM 1)
+2 - GPIO3 (PWM 2)
+3 - GPIO4 (PWM 3)
+4 - GPIO5 (PWM 4)
+
+Jedno wyjście ON/OFF (dymyślnie OFF) - GPIO6.
+Jedno wejście 1wire do podłączenia termometru DS18B20 - GPIO7.
+
+Interfejs web. Tło ciemne. Na górze powinno być logo: Michal.png (plik graficzny 83x73x24 BPP).
+Stały adres IP: 192.168.10.150 z możliwością zmiany na stronie wraz z zapisem zmian do nieulotnej wartości (automatycznie po 5s po każdej zmianie)
+Suwaki PWM1-4 w zakresie 0-100% z możliwością nadania nazwy przez użytkownika.
+Możliwość aktualizacji oporogramowania poprzez OTA.
+Pola długości i szerokości geograficznej. Domyślne wartości: 52.8597009,16.0817148.
+Pole odczytu temperatur z czujnika / ów DS18B20 (w zależności ile układ znalazł bezpośrednio po starcie) wraz z możliwością nadania nazw przez użytkownika.
+
+Układ powinien mieć zaimplementowanego klienta MQTT. Domyślny adres serwera 192.168.1.182:1883. Początek tematu MQTT powinien być niezmienny i posiadać stukturę:
+{telemetria}/{SN_ESP32} gdzie telemetria to powinna być zmienna w programia któą można zmienić przed kompilacją. Kolejna część tematu to np pwm, temperatura, gps. Oczywiście powinna być opcja zarówno odczytu parametrów jak i zapisu.
+Zmiana stanu wyjść PWM, odczyt temperatury z DS18B20, zmiana współrzędnych GPS, adresu IP (+maska, brama), adresu brokera MQTT powinny być możliwe z poziomu MQTT.
+Układ powinien mieć zaimplementowany zegar astronomiczny, na podstawie współrzędnych GPS, który uruchamia wyjścia PWM po zmierzchu i wyłącza po wschodzie słońca. Zegarm powinien automatycznie aktualizować czas z serwera NTP co 12h. Adresy serwerów: 0.pl.pool.ntp.org, 1.pl.pool.ntp.org, 2.pl.pool.ntp.org, 3.pl.pool.ntp.org. Obliczanie czasu włączania i wyłączania PWM raz na dobę (np 00:05), po uruchomieniu układu oraz po każdorazowej zmianie współrzędnych GPS. Czas załączenia i wyłączenia powinien być zapisany do NVS żeby po starcie układ widział je. Jak są wartości inne niż 0 to układ je przyjmuje za ważne do kolejnej godziny przeliczenia czyli 00:05.
