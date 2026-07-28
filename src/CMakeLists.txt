@@ -5,6 +5,8 @@ idf_component_register(
         "pwm/pwm.c"
         "wifi/wifi_manager.c"
         "web/web_server.c"
+        "web/web_pages.c"
+        "web/web_api.c"
 
     INCLUDE_DIRS
         "."
