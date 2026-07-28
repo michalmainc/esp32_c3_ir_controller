@@ -11,10 +11,10 @@ Jedno wyjście ON/OFF (dymyślnie OFF) - GPIO6.
 Jedno wejście 1wire do podłączenia termometru DS18B20 - GPIO7.
 
 Interfejs web. Tło ciemne. Na górze powinno być logo: Michal.png (plik graficzny 83x73x24 BPP).
-Stały adres IP: 192.168.10.150 z możliwością zmiany na stronie wraz z zapisem zmian do nieulotnej wartości (automatycznie po 5s po każdej zmianie)
+Stały adres IP: 172.16.5.5 z możliwością zmiany na stronie wraz z zapisem zmian do nieulotnej wartości (automatycznie po 5s po każdej zmianie)
 Suwaki PWM1-4 w zakresie 0-100% z możliwością nadania nazwy przez użytkownika.
 Możliwość aktualizacji oporogramowania poprzez OTA.
-Pola długości i szerokości geograficznej. Domyślne wartości: 52.8597009,16.0817148.
+Pola długości i szerokości geograficznej. Domyślne wartości: 52.8596415,16.0816679.
 Pole odczytu temperatur z czujnika / ów DS18B20 (w zależności ile układ znalazł bezpośrednio po starcie) wraz z możliwością nadania nazw przez użytkownika.
 
 Układ powinien mieć zaimplementowanego klienta MQTT. Domyślny adres serwera 192.168.1.182:1883. Początek tematu MQTT powinien być niezmienny i posiadać stukturę:

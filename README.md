@@ -6,6 +6,10 @@ Firmware jest tworzony w języku **C** z wykorzystaniem frameworka **ESP-IDF** o
 
 ## Hardware
 
+[Schemat elektryczny XIAO ESP32-C3 v1.3](https://files.seeedstudio.com/wiki/XIAO_WiFi/Resources/XIAO_ESP32C3_v1.3_SCH_260116.pdf)
+
+[Link do mapy Google z domyślną lokalizacją](https://www.google.com/maps/place/Ignacego+Krasickiego+3,+64-731+Drawski+M%C5%82yn/@52.8597701,16.0823327,19.66z/data=!4m6!3m5!1s0x4706b1ab5519d49f:0x373f7f458c295c7f!8m2!3d52.8596415!4d16.0816679!16s%2Fg%2F11qrvnc_xr?entry=ttu&g_ep=EgoyMDI2MDcyMi4wIKXMDSoASAFQAw%3D%3D)
+
 Platforma:
 
 * MCU: ESP32-C3 (RISC-V, 160 MHz)
@@ -52,7 +56,7 @@ Domyślne ustawienia:
 IP:
 
 ```
-192.168.10.150
+172.16.5.5
 ```
 
 Konfiguracja zapisywana jest w pamięci nieulotnej ESP32.
