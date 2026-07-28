@@ -18,15 +18,15 @@ static void load_defaults(void)
 {
 
     strcpy(device_config.device_name,
-           "XIAO_Controller");
+           "esp32_c3");
 
 
     strcpy(device_config.ip,
-           "192.168.10.150");
+           "172.16.5.5");
 
 
     strcpy(device_config.gateway,
-           "192.168.10.1");
+           "172.16.5.1");
 
 
     strcpy(device_config.netmask,
