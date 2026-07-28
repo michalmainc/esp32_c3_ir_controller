@@ -86,6 +86,30 @@ void app_main(void)
         return;
     }
 
+    /*
+     * Przywrócenie wartości zapisanych w NVS.
+     */
+    for (uint8_t channel = 0;
+         channel < PWM_CHANNELS;
+         channel++)
+    {
+        result = pwm_set_percent(
+            channel,
+            cfg->pwm_value[channel]
+        );
+
+        if (result != ESP_OK)
+        {
+            ESP_LOGE(
+                TAG,
+                "Nie mozna przywrocic PWM%d",
+                channel + 1
+            );
+
+            return;
+        }
+    }
+
     result = wifi_manager_init();
 
     if (result != ESP_OK)
