@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>ESP32-C3 Controller</title>
+
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+    <main class="panel">
+        <h1>ESP32-C3 Controller</h1>
+
+        <div class="status">
+            Stan urządzenia:
+            <span class="online">ONLINE</span>
+
+            <br>
+
+            Połączenie:
+            Wi-Fi DHCP
+        </div>
+
+        <button
+            id="restartButton"
+            type="button"
+            onclick="restartDevice()"
+        >
+            Restart ESP32
+        </button>
+
+        <div id="message"></div>
+    </main>
+
+    <script>
+        async function restartDevice()
+        {
+            const button =
+                document.getElementById("restartButton");
+
+            const message =
+                document.getElementById("message");
+
+            button.disabled = true;
+
+            message.textContent =
+                "Restartowanie urządzenia...";
+
+            try
+            {
+                await fetch(
+                    "/api/restart",
+                    {
+                        method: "POST"
+                    }
+                );
+
+                message.textContent =
+                    "ESP32 uruchamia się ponownie.";
+            }
+            catch (error)
+            {
+                message.textContent =
+                    "Połączenie przerwane — trwa restart.";
+            }
+
+            setTimeout(
+                function()
+                {
+                    window.location.reload();
+                },
+                6000
+            );
+        }
+    </script>
+</body>
+</html>

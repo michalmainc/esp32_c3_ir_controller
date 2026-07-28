@@ -1,6 +1,7 @@
 #include "config/config.h"
 #include "pwm/pwm.h"
 #include "wifi/wifi_manager.h"
+#include "web/web_server.h"
 
 #include <stdbool.h>
 
@@ -10,8 +11,9 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-
 static const char *TAG = "MAIN";
+
+static bool web_started = false;
 
 
 static void heartbeat_task(void *pv_parameter)
@@ -108,6 +110,21 @@ void app_main(void)
 
         return;
     }
+
+    result = web_server_start();
+
+    if (result != ESP_OK)
+    {
+        ESP_LOGE(
+            TAG,
+            "Nie udalo sie uruchomic serwera WWW: %s",
+            esp_err_to_name(result)
+        );
+
+        return;
+    }
+
+    web_started = true;
 
     BaseType_t task_result = xTaskCreate(
         heartbeat_task,
