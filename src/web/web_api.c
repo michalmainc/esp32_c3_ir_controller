@@ -3,15 +3,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "pwm/pwm.h"
+#include "device/device.h"
 
 #include "esp_log.h"
 #include "esp_system.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-
-#include "config/config.h"
 
 
 static const char *TAG = "WEB_API";
@@ -37,10 +35,10 @@ static esp_err_t status_handler(httpd_req_t *request)
         response,
         sizeof(response),
         "{\"pwm\":[%u,%u,%u,%u]}",
-        pwm_get_percent(0),
-        pwm_get_percent(1),
-        pwm_get_percent(2),
-        pwm_get_percent(3)
+        device_get_pwm(0),
+        device_get_pwm(1),
+        device_get_pwm(2),
+        device_get_pwm(3)
     );
 
     httpd_resp_set_type(
@@ -133,7 +131,7 @@ static esp_err_t pwm_handler(httpd_req_t *request)
         channel_end == channel_text ||
         *channel_end != '\0' ||
         channel < 0 ||
-        channel >= PWM_CHANNEL_COUNT
+        channel >= DEVICE_PWM_CHANNELS
     )
     {
         httpd_resp_send_err(
@@ -161,7 +159,7 @@ static esp_err_t pwm_handler(httpd_req_t *request)
         return ESP_FAIL;
     }
 
-    result = pwm_set_percent(
+    result = device_set_pwm(
         (uint8_t)channel,
         (uint8_t)percent
     );
@@ -170,7 +168,7 @@ static esp_err_t pwm_handler(httpd_req_t *request)
     {
         ESP_LOGE(
             TAG,
-            "Blad ustawiania PWM%ld: %s",
+            "Nie mozna ustawic PWM%ld: %s",
             channel + 1,
             esp_err_to_name(result)
         );
@@ -179,29 +177,6 @@ static esp_err_t pwm_handler(httpd_req_t *request)
             request,
             HTTPD_500_INTERNAL_SERVER_ERROR,
             "Blad ustawiania PWM"
-        );
-
-        return result;
-    }
-
-    result = config_set_pwm_value(
-        (uint8_t)channel,
-        (uint8_t)percent
-    );
-
-    if (result != ESP_OK)
-    {
-        ESP_LOGE(
-            TAG,
-            "Nie mozna zaplanowac zapisu PWM%ld: %s",
-            channel + 1,
-            esp_err_to_name(result)
-        );
-
-        httpd_resp_send_err(
-            request,
-            HTTPD_500_INTERNAL_SERVER_ERROR,
-            "Blad zapisu konfiguracji"
         );
 
         return result;

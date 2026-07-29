@@ -3,6 +3,7 @@ idf_component_register(
         "main.c"
         "config/config.c"
         "pwm/pwm.c"
+        "device/device.c"
         "wifi/wifi_manager.c"
         "web/web_server.c"
         "web/web_pages.c"
@@ -12,6 +13,7 @@ idf_component_register(
         "."
         "config"
         "pwm"
+        "device"
         "wifi"
         "web"
 
