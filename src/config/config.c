@@ -10,7 +10,7 @@
 #include "freertos/timers.h"
 
 
-#define NVS_NAMESPACE       "config"
+#define NVS_NAMESPACE        "config"
 #define CONFIG_SAVE_DELAY_MS 5000
 
 
@@ -31,21 +31,6 @@ static void load_defaults(void)
     strcpy(
         device_config.device_name,
         "esp32_c3"
-    );
-
-    strcpy(
-        device_config.ip,
-        "172.16.5.5"
-    );
-
-    strcpy(
-        device_config.gateway,
-        "172.16.5.1"
-    );
-
-    strcpy(
-        device_config.netmask,
-        "255.255.255.0"
     );
 
     device_config.latitude = 52.8597009f;

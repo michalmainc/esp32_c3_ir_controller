@@ -13,10 +13,6 @@ typedef struct
 {
     char device_name[32];
 
-    char ip[16];
-    char gateway[16];
-    char netmask[16];
-
     float latitude;
     float longitude;
 
