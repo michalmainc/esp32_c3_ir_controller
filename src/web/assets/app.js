@@ -9,9 +9,11 @@ const pwmEditing = Array(PWM_CHANNEL_COUNT).fill(false);
 
 let statusInterval = null;
 
+
 function getElement(id) {
     return document.getElementById(id);
 }
+
 
 function setMessage(text, type = "") {
     const message = getElement("message");
@@ -26,11 +28,12 @@ function setMessage(text, type = "") {
     }
 }
 
+
 function formatUptime(totalSeconds) {
     const seconds = Number(totalSeconds);
 
     if (!Number.isFinite(seconds) || seconds < 0) {
-        return "—";
+        return "--";
     }
 
     const days = Math.floor(seconds / 86400);
@@ -52,37 +55,48 @@ function formatUptime(totalSeconds) {
     return parts.join(" ");
 }
 
+
 function formatHeap(bytes) {
     const value = Number(bytes);
 
     if (!Number.isFinite(value) || value < 0) {
-        return "—";
+        return "--";
     }
 
     return `${Math.round(value / 1024)} kB`;
 }
 
+
 function formatRssi(rssi) {
     const value = Number(rssi);
 
     if (!Number.isFinite(value) || value === 0) {
-        return "—";
+        return "--";
     }
 
     return `${value} dBm`;
 }
 
-function updateConnectionBadge(connected) {
+
+function updateDeviceStatus(online) {
     const badge = getElement("deviceStatus");
     const text = getElement("deviceStatusText");
 
-    badge.classList.toggle("status-online", connected);
-    badge.classList.toggle("status-offline", !connected);
+    badge.classList.toggle(
+        "status-online",
+        online
+    );
 
-    text.textContent = connected
-        ? "Urządzenie online"
-        : "Brak połączenia";
+    badge.classList.toggle(
+        "status-offline",
+        !online
+    );
+
+    text.textContent = online
+        ? "ONLINE"
+        : "OFFLINE";
 }
+
 
 function updateDevice(device) {
     if (!device) {
@@ -93,8 +107,9 @@ function updateDevice(device) {
         device.name || "ESP32-C3 IR Controller";
 
     getElement("deviceSerial").textContent =
-        device.serial || "—";
+        device.serial || "--";
 }
+
 
 function updateWifi(wifi) {
     const connected = Boolean(wifi?.connected);
@@ -115,13 +130,14 @@ function updateWifi(wifi) {
     );
 
     getElement("wifiIp").textContent =
-        wifi?.ip || "—";
+        wifi?.ip || "--";
 
     getElement("wifiRssi").textContent =
         formatRssi(wifi?.rssi);
 
-    updateConnectionBadge(connected);
+    updateDeviceStatus(connected);
 }
+
 
 function updateMqtt(mqtt) {
     const connected = Boolean(mqtt?.connected);
@@ -142,6 +158,7 @@ function updateMqtt(mqtt) {
     );
 }
 
+
 function updateSystem(system) {
     getElement("systemUptime").textContent =
         formatUptime(system?.uptime);
@@ -149,6 +166,7 @@ function updateSystem(system) {
     getElement("systemHeap").textContent =
         formatHeap(system?.free_heap);
 }
+
 
 function updatePwm(outputs) {
     const pwm = outputs?.pwm;
@@ -170,8 +188,12 @@ function updatePwm(outputs) {
         }
 
         const value = Number(pwm[channel]);
-        const slider = getElement(`pwmSlider${channel}`);
-        const output = getElement(`pwmValue${channel}`);
+        const slider = getElement(
+            `pwmSlider${channel}`
+        );
+        const output = getElement(
+            `pwmValue${channel}`
+        );
 
         if (
             !Number.isFinite(value) ||
@@ -185,6 +207,7 @@ function updatePwm(outputs) {
         output.textContent = `${value}%`;
     }
 }
+
 
 function getTemperatureValueClass(value) {
     if (value < 0) {
@@ -202,12 +225,15 @@ function getTemperatureValueClass(value) {
     return "temperature-value-danger";
 }
 
+
 function createTemperatureCard(sensor) {
     const card = document.createElement("article");
     card.className = "temperature-sensor";
 
     if (!sensor.present) {
-        card.classList.add("temperature-sensor-offline");
+        card.classList.add(
+            "temperature-sensor-offline"
+        );
     }
 
     const name = document.createElement("div");
@@ -216,7 +242,8 @@ function createTemperatureCard(sensor) {
 
     const address = document.createElement("div");
     address.className = "temperature-address";
-    address.textContent = sensor.address || "Nieznany adres";
+    address.textContent =
+        sensor.address || "Nieznany adres";
 
     const footer = document.createElement("div");
     footer.className = "temperature-footer";
@@ -233,19 +260,29 @@ function createTemperatureCard(sensor) {
         state.textContent = "Online";
 
         if (Number.isFinite(numericValue)) {
-            value.textContent = `${numericValue.toFixed(2)} °C`;
+            value.textContent =
+                `${numericValue.toFixed(2)} °C`;
+
             value.classList.add(
-                getTemperatureValueClass(numericValue)
+                getTemperatureValueClass(
+                    numericValue
+                )
             );
         } else {
-            value.textContent = "—";
+            value.textContent = "--";
         }
     } else {
         state.textContent = "Brak odczytu";
-        state.classList.add("temperature-state-offline");
+
+        state.classList.add(
+            "temperature-state-offline"
+        );
 
         value.textContent = "Offline";
-        value.classList.add("temperature-value-danger");
+
+        value.classList.add(
+            "temperature-value-danger"
+        );
     }
 
     footer.appendChild(state);
@@ -258,25 +295,29 @@ function createTemperatureCard(sensor) {
     return card;
 }
 
+
 function updateTemperatures(temperature) {
-    const container = getElement("temperatureSensors");
+    const container = getElement(
+        "temperatureSensors"
+    );
+
     const sensors = temperature?.sensors;
-
-    const count = Number(temperature?.count) || 0;
-
-    getElement("temperatureCount").textContent =
-        `${count} ${count === 1 ? "czujnik" : "czujników"}`;
 
     container.replaceChildren();
 
-    if (!Array.isArray(sensors) || sensors.length === 0) {
-        const emptyState = document.createElement("div");
+    if (
+        !Array.isArray(sensors) ||
+        sensors.length === 0
+    ) {
+        const emptyState =
+            document.createElement("div");
 
         emptyState.className = "empty-state";
         emptyState.textContent =
             "Nie wykryto czujników DS18B20";
 
         container.appendChild(emptyState);
+
         return;
     }
 
@@ -287,19 +328,6 @@ function updateTemperatures(temperature) {
     }
 }
 
-function updateLastRefresh() {
-    const time = new Date().toLocaleTimeString(
-        "pl-PL",
-        {
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit"
-        }
-    );
-
-    getElement("lastUpdate").textContent =
-        `Aktualizacja: ${time}`;
-}
 
 async function loadStatus() {
     try {
@@ -311,7 +339,9 @@ async function loadStatus() {
         );
 
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            throw new Error(
+                `HTTP ${response.status}`
+            );
         }
 
         const data = await response.json();
@@ -322,11 +352,10 @@ async function loadStatus() {
         updatePwm(data.outputs);
         updateTemperatures(data.temperature);
         updateSystem(data.system);
-        updateLastRefresh();
 
         setMessage("");
     } catch (error) {
-        updateConnectionBadge(false);
+        updateDeviceStatus(false);
 
         setMessage(
             "Nie można pobrać aktualnego stanu urządzenia",
@@ -336,6 +365,7 @@ async function loadStatus() {
         console.error(error);
     }
 }
+
 
 async function setPwm(channel, value) {
     pwmEditing[channel] = true;
@@ -349,7 +379,9 @@ async function setPwm(channel, value) {
         );
 
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            throw new Error(
+                `HTTP ${response.status}`
+            );
         }
 
         setMessage(
@@ -368,39 +400,64 @@ async function setPwm(channel, value) {
     }
 }
 
+
 function initializePwmControls() {
     for (
         let channel = 0;
         channel < PWM_CHANNEL_COUNT;
         channel++
     ) {
-        const slider = getElement(`pwmSlider${channel}`);
-        const output = getElement(`pwmValue${channel}`);
+        const slider = getElement(
+            `pwmSlider${channel}`
+        );
 
-        slider.addEventListener("input", () => {
-            const value = slider.value;
+        const output = getElement(
+            `pwmValue${channel}`
+        );
 
-            pwmEditing[channel] = true;
-            output.textContent = `${value}%`;
+        slider.addEventListener(
+            "input",
+            () => {
+                const value = slider.value;
 
-            clearTimeout(pwmTimers[channel]);
+                pwmEditing[channel] = true;
+                output.textContent = `${value}%`;
 
-            pwmTimers[channel] = setTimeout(
-                () => setPwm(channel, value),
-                PWM_SEND_DELAY_MS
-            );
-        });
+                clearTimeout(
+                    pwmTimers[channel]
+                );
 
-        slider.addEventListener("change", () => {
-            clearTimeout(pwmTimers[channel]);
+                pwmTimers[channel] = setTimeout(
+                    () => setPwm(
+                        channel,
+                        value
+                    ),
+                    PWM_SEND_DELAY_MS
+                );
+            }
+        );
 
-            setPwm(channel, slider.value);
-        });
+        slider.addEventListener(
+            "change",
+            () => {
+                clearTimeout(
+                    pwmTimers[channel]
+                );
+
+                setPwm(
+                    channel,
+                    slider.value
+                );
+            }
+        );
     }
 }
 
+
 async function restartDevice() {
-    const button = getElement("restartButton");
+    const button = getElement(
+        "restartButton"
+    );
 
     button.disabled = true;
 
@@ -434,10 +491,13 @@ async function restartDevice() {
     );
 }
 
+
 function initializePage() {
     initializePwmControls();
 
-    getElement("restartButton").addEventListener(
+    getElement(
+        "restartButton"
+    ).addEventListener(
         "click",
         restartDevice
     );
@@ -449,6 +509,7 @@ function initializePage() {
         STATUS_REFRESH_INTERVAL_MS
     );
 }
+
 
 window.addEventListener(
     "DOMContentLoaded",

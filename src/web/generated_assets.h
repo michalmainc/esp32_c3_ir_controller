@@ -12,4 +12,7 @@ extern const size_t web_style_css_length;
 extern const unsigned char web_app_js[];
 extern const size_t web_app_js_length;
 
+extern const unsigned char web_logo_png[];
+extern const size_t web_logo_png_length;
+
 #endif

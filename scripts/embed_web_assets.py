@@ -2,12 +2,26 @@ from pathlib import Path
 
 Import("env")
 
+
 PROJECT_DIR = Path(env["PROJECT_DIR"])
 
 ASSETS = [
-    ("web_index_html", PROJECT_DIR / "src/web/assets/index.html"),
-    ("web_style_css", PROJECT_DIR / "src/web/assets/style.css"),
-    ("web_app_js", PROJECT_DIR / "src/web/assets/app.js"),
+    (
+        "web_index_html",
+        PROJECT_DIR / "src/web/assets/index.html",
+    ),
+    (
+        "web_style_css",
+        PROJECT_DIR / "src/web/assets/style.css",
+    ),
+    (
+        "web_app_js",
+        PROJECT_DIR / "src/web/assets/app.js",
+    ),
+    (
+        "web_logo_png",
+        PROJECT_DIR / "src/web/assets/Michal.png",
+    ),
 ]
 
 OUTPUT_C = PROJECT_DIR / "src/web/generated_assets.c"
@@ -15,21 +29,30 @@ OUTPUT_H = PROJECT_DIR / "src/web/generated_assets.h"
 
 
 def format_byte_array(data: bytes) -> str:
-    values = [f"0x{value:02X}" for value in data + b"\0"]
+    values = [f"0x{value:02X}" for value in data]
 
     lines = []
 
     for index in range(0, len(values), 12):
-        lines.append("    " + ", ".join(values[index:index + 12]))
+        lines.append(
+            "    " + ", ".join(values[index:index + 12])
+        )
 
     return ",\n".join(lines)
 
 
 def write_if_changed(path: Path, content: str) -> None:
-    if path.exists() and path.read_text(encoding="utf-8") == content:
-        return
+    if path.exists():
+        current = path.read_text(encoding="utf-8")
 
-    path.write_text(content, encoding="utf-8")
+        if current == content:
+            return
+
+    path.write_text(
+        content,
+        encoding="utf-8",
+        newline="\n",
+    )
 
 
 header_lines = [
@@ -53,35 +76,41 @@ for symbol, asset_path in ASSETS:
 
     data = asset_path.read_bytes()
 
-    header_lines.extend([
-        f"extern const unsigned char {symbol}[];",
-        f"extern const size_t {symbol}_length;",
-        "",
-    ])
+    header_lines.extend(
+        [
+            f"extern const unsigned char {symbol}[];",
+            f"extern const size_t {symbol}_length;",
+            "",
+        ]
+    )
 
-    source_lines.extend([
-        f"const unsigned char {symbol}[] = {{",
-        format_byte_array(data),
-        "};",
-        "",
-        f"const size_t {symbol}_length =",
-        f"    sizeof({symbol}) - 1;",
-        "",
-    ])
+    source_lines.extend(
+        [
+            f"const unsigned char {symbol}[] = {{",
+            format_byte_array(data),
+            "};",
+            "",
+            f"const size_t {symbol}_length =",
+            f"    sizeof({symbol});",
+            "",
+        ]
+    )
 
-header_lines.extend([
-    "#endif",
-    "",
-])
+header_lines.extend(
+    [
+        "#endif",
+        "",
+    ]
+)
 
 write_if_changed(
     OUTPUT_H,
-    "\n".join(header_lines)
+    "\n".join(header_lines),
 )
 
 write_if_changed(
     OUTPUT_C,
-    "\n".join(source_lines)
+    "\n".join(source_lines),
 )
 
 print("Web assets generated.")
