@@ -11,6 +11,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "device/device.h"
+
 
 static const char *TAG = "MAIN";
 
@@ -108,6 +110,19 @@ void app_main(void)
 
             return;
         }
+    }
+
+    result = device_init();
+
+    if (result != ESP_OK)
+    {
+        ESP_LOGE(
+            TAG,
+            "Nie udalo sie uruchomic warstwy device: %s",
+            esp_err_to_name(result)
+        );
+
+        return;
     }
 
     result = wifi_manager_init();

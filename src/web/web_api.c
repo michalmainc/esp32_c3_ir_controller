@@ -130,8 +130,7 @@ static esp_err_t pwm_handler(httpd_req_t *request)
     if (
         channel_end == channel_text ||
         *channel_end != '\0' ||
-        channel < 0 ||
-        channel >= DEVICE_PWM_CHANNELS
+        channel < 0
     )
     {
         httpd_resp_send_err(
