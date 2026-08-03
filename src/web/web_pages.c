@@ -87,6 +87,54 @@ static const char index_html[] =
         "color:#aeb6c2;"
     "}"
 
+        ".temperature-section{"
+        "padding:16px;"
+        "margin:20px 0 12px;"
+        "background:#252932;"
+        "border-radius:10px;"
+    "}"
+
+    ".temperature-title{"
+        "margin:0 0 12px;"
+        "font-size:18px;"
+    "}"
+
+    ".temperature-sensor{"
+        "padding:12px;"
+        "margin-top:10px;"
+        "background:#1b1e24;"
+        "border:1px solid #343943;"
+        "border-radius:8px;"
+    "}"
+
+    ".temperature-row{"
+        "display:flex;"
+        "justify-content:space-between;"
+        "align-items:center;"
+        "gap:12px;"
+    "}"
+
+    ".temperature-address{"
+        "font-family:monospace;"
+        "font-size:13px;"
+        "color:#aeb6c2;"
+        "overflow-wrap:anywhere;"
+    "}"
+
+    ".temperature-value{"
+        "font-size:22px;"
+        "font-weight:bold;"
+        "white-space:nowrap;"
+    "}"
+
+    ".temperature-missing{"
+        "color:#e57373;"
+    "}"
+
+    ".temperature-empty{"
+        "color:#aeb6c2;"
+    "}"
+
     "button{"
         "width:100%;"
         "padding:15px;"
@@ -164,6 +212,13 @@ static const char index_html[] =
         "<div class=\"pwm-info\">GPIO5 / D3</div>"
     "</div>"
 
+    "<section class=\"temperature-section\">"
+        "<h2 class=\"temperature-title\">Temperatura</h2>"
+        "<div id=\"temperatureSensors\">"
+            "<div class=\"temperature-empty\">Ładowanie danych...</div>"
+        "</div>"
+    "</section>"
+
     "<button id=\"restartButton\" onclick=\"restartDevice()\">"
     "Restart ESP32"
     "</button>"
@@ -176,6 +231,51 @@ static const char index_html[] =
     "const message=document.getElementById('message');"
     "const pwmTimers=[null,null,null,null];"
 
+    "function renderTemperatures(temperature){"
+        "const container=document.getElementById('temperatureSensors');"
+
+        "if(!temperature||!Array.isArray(temperature.sensors)){"
+            "container.innerHTML="
+                "'<div class=\"temperature-empty\">Brak danych temperatury</div>';"
+            "return;"
+        "}"
+
+        "if(temperature.sensors.length===0){"
+            "container.innerHTML="
+                "'<div class=\"temperature-empty\">Nie wykryto czujników DS18B20</div>';"
+            "return;"
+        "}"
+
+        "container.innerHTML='';"
+
+        "for(const sensor of temperature.sensors){"
+            "const card=document.createElement('div');"
+            "card.className='temperature-sensor';"
+
+            "const row=document.createElement('div');"
+            "row.className='temperature-row';"
+
+            "const address=document.createElement('div');"
+            "address.className='temperature-address';"
+            "address.textContent=sensor.address||'Nieznany adres';"
+
+            "const value=document.createElement('div');"
+
+            "if(sensor.present){"
+                "value.className='temperature-value';"
+                "value.textContent=Number(sensor.value).toFixed(2)+' °C';"
+            "}else{"
+                "value.className='temperature-value temperature-missing';"
+                "value.textContent='Brak odczytu';"
+            "}"
+
+            "row.appendChild(address);"
+            "row.appendChild(value);"
+            "card.appendChild(row);"
+            "container.appendChild(card);"
+        "}"
+    "}"
+
     "async function loadStatus(){"
         "try{"
             "const response=await fetch('/api/status');"
@@ -186,18 +286,19 @@ static const char index_html[] =
 
             "const data=await response.json();"
 
-            "if(!Array.isArray(data.pwm)||data.pwm.length<4){"
+            "if(!Array.isArray(data.outputs.pwm)||data.outputs.pwm.length<4){"
                 "throw new Error('Nieprawidlowe dane PWM');"
             "}"
 
             "for(let channel=0;channel<4;channel++){"
-                "const value=data.pwm[channel];"
+                "const value=data.outputs.pwm[channel];"
                 "const slider=document.getElementById('pwmSlider'+channel);"
                 "const valueText=document.getElementById('pwmValue'+channel);"
 
                 "slider.value=value;"
                 "valueText.textContent=value+'%';"
             "}"
+            "renderTemperatures(data.temperature);"
         "}catch(error){"
             "message.textContent='Nie można pobrać aktualnego stanu PWM';"
         "}"
@@ -257,6 +358,8 @@ static const char index_html[] =
     "}"
 
     "window.addEventListener('load',loadStatus);"
+        "loadStatus();"
+        "setInterval(loadStatus,5000);"
     "</script>"
 
     "</body>"

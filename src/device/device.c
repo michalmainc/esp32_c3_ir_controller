@@ -4,8 +4,12 @@
 
 #include "config/config.h"
 #include "pwm/pwm.h"
+#include "wifi/wifi_manager.h"
 
 #include "esp_log.h"
+#include "esp_system.h"
+#include "esp_timer.h"
+#include "esp_mac.h"
 
 
 static const char *TAG = "DEVICE";
@@ -39,6 +43,49 @@ static esp_err_t device_apply_pwm(
 }
 
 
+static void device_update_system_state(void)
+{
+    device_state.system.uptime =
+        (uint32_t)(esp_timer_get_time() / 1000000ULL);
+
+    device_state.system.free_heap =
+        esp_get_free_heap_size();
+}
+
+
+static void device_update_wifi_state(void)
+{
+    device_state.wifi.connected =
+        wifi_manager_is_connected();
+
+    if (!device_state.wifi.connected)
+    {
+        device_state.wifi.rssi = 0;
+        device_state.wifi.ip[0] = '\0';
+        return;
+    }
+
+    if (
+        wifi_manager_get_ip(
+            device_state.wifi.ip,
+            sizeof(device_state.wifi.ip)
+        ) != ESP_OK
+    )
+    {
+        device_state.wifi.ip[0] = '\0';
+    }
+
+    if (
+        wifi_manager_get_rssi(
+            &device_state.wifi.rssi
+        ) != ESP_OK
+    )
+    {
+        device_state.wifi.rssi = 0;
+    }
+}
+
+
 esp_err_t device_init(void)
 {
     ESP_LOGI(TAG, "Inicjalizacja warstwy device");
@@ -49,13 +96,52 @@ esp_err_t device_init(void)
         sizeof(device_state)
     );
 
-    for (uint8_t channel = 0;
-         channel < PWM_CHANNELS;
-         channel++)
+    strcpy(
+        device_state.device.name,
+        config_get()->device_name
+    );
+
+    uint8_t mac[6];
+
+    esp_err_t result = esp_read_mac(
+        mac,
+        ESP_MAC_WIFI_STA
+    );
+
+    if (result == ESP_OK)
+    {
+        snprintf(
+            device_state.device.serial,
+            sizeof(device_state.device.serial),
+            "ESP32-%02X%02X%02X%02X%02X%02X",
+            mac[0],
+            mac[1],
+            mac[2],
+            mac[3],
+            mac[4],
+            mac[5]
+        );
+    }
+    else
+    {
+        strcpy(
+            device_state.device.serial,
+            "UNKNOWN"
+        );
+    }
+
+    for (
+        uint8_t channel = 0;
+        channel < PWM_CHANNELS;
+        channel++
+    )
     {
         device_state.outputs.pwm[channel] =
             pwm_get_percent(channel);
     }
+
+    device_update_system_state();
+    device_update_wifi_state();
 
     return ESP_OK;
 }
@@ -136,5 +222,45 @@ uint8_t device_get_pwm(
 
 const device_state_t *device_get_state(void)
 {
+    device_update_system_state();
+    device_update_wifi_state();
+
     return &device_state;
+}
+
+void device_set_temperature_count(
+    uint8_t count
+)
+{
+    if (count > DEVICE_MAX_TEMPERATURE_SENSORS)
+    {
+        count = DEVICE_MAX_TEMPERATURE_SENSORS;
+    }
+
+    device_state.temperature.count = count;
+}
+
+void device_update_temperature_sensor(
+    uint8_t index,
+    uint64_t address,
+    float value,
+    bool present
+)
+{
+    if (index >= DEVICE_MAX_TEMPERATURE_SENSORS)
+    {
+        return;
+    }
+
+    device_state.temperature.sensors[index].address = address;
+    device_state.temperature.sensors[index].value = value;
+    device_state.temperature.sensors[index].present = present;
+
+    if (
+        present &&
+        device_state.temperature.count < (index + 1)
+    )
+    {
+        device_state.temperature.count = index + 1;
+    }
 }

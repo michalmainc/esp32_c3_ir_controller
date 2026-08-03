@@ -1,5 +1,6 @@
 #include "wifi_manager.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include "secrets.h"
@@ -19,6 +20,8 @@
 static const char *TAG = "WIFI";
 
 static EventGroupHandle_t wifi_event_group;
+static esp_netif_t *wifi_netif = NULL;
+
 static bool wifi_connected = false;
 
 
@@ -30,14 +33,18 @@ static void wifi_event_handler(
 )
 {
     (void)arg;
-    (void)event_data;
 
     if (
         event_base == WIFI_EVENT &&
         event_id == WIFI_EVENT_STA_START
     )
     {
-        ESP_LOGI(TAG, "Proba polaczenia z siecia %s", WIFI_SSID);
+        ESP_LOGI(
+            TAG,
+            "Proba polaczenia z siecia %s",
+            WIFI_SSID
+        );
+
         esp_wifi_connect();
     }
     else if (
@@ -52,7 +59,10 @@ static void wifi_event_handler(
             WIFI_CONNECTED_BIT
         );
 
-        ESP_LOGW(TAG, "Rozlaczono z Wi-Fi, ponawiam polaczenie");
+        ESP_LOGW(
+            TAG,
+            "Rozlaczono z Wi-Fi, ponawiam polaczenie"
+        );
 
         esp_wifi_connect();
     }
@@ -93,22 +103,28 @@ esp_err_t wifi_manager_init(void)
 
     esp_err_t err = esp_netif_init();
 
-    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE)
+    if (
+        err != ESP_OK &&
+        err != ESP_ERR_INVALID_STATE
+    )
     {
         return err;
     }
 
     err = esp_event_loop_create_default();
 
-    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE)
+    if (
+        err != ESP_OK &&
+        err != ESP_ERR_INVALID_STATE
+    )
     {
         return err;
     }
 
-    esp_netif_t *netif =
+    wifi_netif =
         esp_netif_create_default_wifi_sta();
 
-    if (netif == NULL)
+    if (wifi_netif == NULL)
     {
         return ESP_FAIL;
     }
@@ -116,7 +132,9 @@ esp_err_t wifi_manager_init(void)
     wifi_init_config_t wifi_init_config =
         WIFI_INIT_CONFIG_DEFAULT();
 
-    err = esp_wifi_init(&wifi_init_config);
+    err = esp_wifi_init(
+        &wifi_init_config
+    );
 
     if (err != ESP_OK)
     {
@@ -164,7 +182,9 @@ esp_err_t wifi_manager_init(void)
     wifi_config.sta.threshold.authmode =
         WIFI_AUTH_WPA2_PSK;
 
-    err = esp_wifi_set_mode(WIFI_MODE_STA);
+    err = esp_wifi_set_mode(
+        WIFI_MODE_STA
+    );
 
     if (err != ESP_OK)
     {
@@ -188,7 +208,10 @@ esp_err_t wifi_manager_init(void)
         return err;
     }
 
-    ESP_LOGI(TAG, "Sterownik Wi-Fi uruchomiony");
+    ESP_LOGI(
+        TAG,
+        "Sterownik Wi-Fi uruchomiony"
+    );
 
     return ESP_OK;
 }
@@ -197,4 +220,88 @@ esp_err_t wifi_manager_init(void)
 bool wifi_manager_is_connected(void)
 {
     return wifi_connected;
+}
+
+
+esp_err_t wifi_manager_get_ip(
+    char *buffer,
+    size_t buffer_size
+)
+{
+    if (
+        buffer == NULL ||
+        buffer_size < 16
+    )
+    {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (
+        !wifi_connected ||
+        wifi_netif == NULL
+    )
+    {
+        buffer[0] = '\0';
+
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    esp_netif_ip_info_t ip_info = {0};
+
+    esp_err_t result = esp_netif_get_ip_info(
+        wifi_netif,
+        &ip_info
+    );
+
+    if (result != ESP_OK)
+    {
+        buffer[0] = '\0';
+
+        return result;
+    }
+
+    snprintf(
+        buffer,
+        buffer_size,
+        IPSTR,
+        IP2STR(&ip_info.ip)
+    );
+
+    return ESP_OK;
+}
+
+
+esp_err_t wifi_manager_get_rssi(
+    int8_t *rssi
+)
+{
+    if (rssi == NULL)
+    {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (!wifi_connected)
+    {
+        *rssi = 0;
+
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    wifi_ap_record_t access_point = {0};
+
+    esp_err_t result =
+        esp_wifi_sta_get_ap_info(
+            &access_point
+        );
+
+    if (result != ESP_OK)
+    {
+        *rssi = 0;
+
+        return result;
+    }
+
+    *rssi = access_point.rssi;
+
+    return ESP_OK;
 }

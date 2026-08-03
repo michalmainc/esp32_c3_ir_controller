@@ -1,4 +1,5 @@
 #include "web_api.h"
+#include "web_json.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,33 +26,6 @@ static void restart_task(void *parameter)
 
     esp_restart();
 }
-
-
-static esp_err_t status_handler(httpd_req_t *request)
-{
-    char response[96];
-
-    snprintf(
-        response,
-        sizeof(response),
-        "{\"pwm\":[%u,%u,%u,%u]}",
-        device_get_pwm(0),
-        device_get_pwm(1),
-        device_get_pwm(2),
-        device_get_pwm(3)
-    );
-
-    httpd_resp_set_type(
-        request,
-        "application/json"
-    );
-
-    return httpd_resp_sendstr(
-        request,
-        response
-    );
-}
-
 
 static esp_err_t pwm_handler(httpd_req_t *request)
 {
@@ -254,6 +228,51 @@ static esp_err_t restart_handler(httpd_req_t *request)
     return ESP_OK;
 }
 
+static esp_err_t status_handler(httpd_req_t *request)
+{
+    const device_state_t *state =
+        device_get_state();
+
+    if (state == NULL)
+    {
+        httpd_resp_send_err(
+            request,
+            HTTPD_500_INTERNAL_SERVER_ERROR,
+            "Brak stanu urzadzenia"
+        );
+
+        return ESP_FAIL;
+    }
+
+    char *response =
+        web_json_build_status(state);
+
+    if (response == NULL)
+    {
+        httpd_resp_send_err(
+            request,
+            HTTPD_500_INTERNAL_SERVER_ERROR,
+            "Nie mozna utworzyc JSON"
+        );
+
+        return ESP_ERR_NO_MEM;
+    }
+
+    httpd_resp_set_type(
+        request,
+        "application/json"
+    );
+
+    esp_err_t result =
+        httpd_resp_sendstr(
+            request,
+            response
+        );
+
+    free(response);
+
+    return result;
+}
 
 esp_err_t web_api_register(httpd_handle_t server)
 {
@@ -308,3 +327,4 @@ esp_err_t web_api_register(httpd_handle_t server)
         &restart_uri
     );
 }
+

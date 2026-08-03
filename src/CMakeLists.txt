@@ -1,10 +1,13 @@
 idf_component_register(
     SRCS
+        "web/web_json.c"
         "main.c"
         "config/config.c"
         "pwm/pwm.c"
         "device/device.c"
         "wifi/wifi_manager.c"
+        "onewire/onewire_utils.c"
+        "temperature/temperature_manager.c"
         "web/web_server.c"
         "web/web_pages.c"
         "web/web_api.c"
@@ -15,6 +18,7 @@ idf_component_register(
         "pwm"
         "device"
         "wifi"
+        "temperature"
         "web"
 
     REQUIRES

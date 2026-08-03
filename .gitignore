@@ -20,3 +20,5 @@ sdkconfig.old
 
 # Prywatne dane
 src/secrets.h
+
+managed_components/

@@ -12,6 +12,7 @@
 #include "freertos/task.h"
 
 #include "device/device.h"
+#include "temperature/temperature_manager.h"
 
 
 static const char *TAG = "MAIN";
@@ -124,6 +125,23 @@ void app_main(void)
 
         return;
     }
+
+    result = temperature_manager_init();
+
+    if (result != ESP_OK)
+    {
+        ESP_LOGE(
+            TAG,
+            "Nie udalo sie uruchomic magistrali temperatury: %s",
+            esp_err_to_name(result)
+        );
+
+        return;
+    }
+
+    device_set_temperature_count(
+        temperature_manager_get_sensor_count()
+    );
 
     result = wifi_manager_init();
 
