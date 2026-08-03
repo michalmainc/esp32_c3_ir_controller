@@ -1,6 +1,5 @@
 idf_component_register(
     SRCS
-        "web/web_json.c"
         "main.c"
         "config/config.c"
         "pwm/pwm.c"
@@ -11,6 +10,8 @@ idf_component_register(
         "web/web_server.c"
         "web/web_pages.c"
         "web/web_api.c"
+        "web/web_json.c"
+        "web/generated_assets.c"
 
     INCLUDE_DIRS
         "."
@@ -18,6 +19,7 @@ idf_component_register(
         "pwm"
         "device"
         "wifi"
+        "onewire"
         "temperature"
         "web"
 
@@ -27,4 +29,5 @@ idf_component_register(
         esp_event
         esp_netif
         esp_http_server
+
 )

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <title>ESP32-C3 IR Controller</title>
+
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+    <main class="dashboard">
+        <header class="page-header">
+            <div>
+                <p class="eyebrow">Panel sterownika</p>
+                <h1 id="deviceName">ESP32-C3 IR Controller</h1>
+                <p class="serial">
+                    SN:
+                    <span id="deviceSerial">—</span>
+                </p>
+            </div>
+
+            <div
+                id="deviceStatus"
+                class="status-badge status-offline"
+            >
+                <span class="status-dot"></span>
+                <span id="deviceStatusText">Brak połączenia</span>
+            </div>
+        </header>
+
+        <section class="card">
+            <div class="section-header">
+                <div>
+                    <p class="eyebrow">Łączność i system</p>
+                    <h2>Status urządzenia</h2>
+                </div>
+
+                <span
+                    id="lastUpdate"
+                    class="last-update"
+                >
+                    Oczekiwanie na dane
+                </span>
+            </div>
+
+            <div class="status-grid">
+                <article class="status-item">
+                    <span class="status-label">Wi-Fi</span>
+
+                    <span
+                        id="wifiStatus"
+                        class="status-value status-value-offline"
+                    >
+                        Rozłączono
+                    </span>
+                </article>
+
+                <article class="status-item">
+                    <span class="status-label">Adres IP</span>
+                    <span id="wifiIp" class="status-value">—</span>
+                </article>
+
+                <article class="status-item">
+                    <span class="status-label">RSSI</span>
+                    <span id="wifiRssi" class="status-value">—</span>
+                </article>
+
+                <article class="status-item">
+                    <span class="status-label">MQTT</span>
+
+                    <span
+                        id="mqttStatus"
+                        class="status-value status-value-offline"
+                    >
+                        Rozłączono
+                    </span>
+                </article>
+
+                <article class="status-item">
+                    <span class="status-label">Czas pracy</span>
+                    <span id="systemUptime" class="status-value">—</span>
+                </article>
+
+                <article class="status-item">
+                    <span class="status-label">Wolna pamięć</span>
+                    <span id="systemHeap" class="status-value">—</span>
+                </article>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="section-header">
+                <div>
+                    <p class="eyebrow">Wyjścia</p>
+                    <h2>Sterowanie PWM</h2>
+                </div>
+
+                <span class="section-note">400 Hz</span>
+            </div>
+
+            <div class="pwm-grid">
+                <article class="pwm-card">
+                    <div class="pwm-heading">
+                        <div>
+                            <h3>PWM1</h3>
+                            <p>GPIO2 / D0</p>
+                        </div>
+
+                        <output id="pwmValue0">0%</output>
+                    </div>
+
+                    <input
+                        id="pwmSlider0"
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value="0"
+                        aria-label="PWM1"
+                    >
+                </article>
+
+                <article class="pwm-card">
+                    <div class="pwm-heading">
+                        <div>
+                            <h3>PWM2</h3>
+                            <p>GPIO3 / D1</p>
+                        </div>
+
+                        <output id="pwmValue1">0%</output>
+                    </div>
+
+                    <input
+                        id="pwmSlider1"
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value="0"
+                        aria-label="PWM2"
+                    >
+                </article>
+
+                <article class="pwm-card">
+                    <div class="pwm-heading">
+                        <div>
+                            <h3>PWM3</h3>
+                            <p>GPIO4 / D2</p>
+                        </div>
+
+                        <output id="pwmValue2">0%</output>
+                    </div>
+
+                    <input
+                        id="pwmSlider2"
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value="0"
+                        aria-label="PWM3"
+                    >
+                </article>
+
+                <article class="pwm-card">
+                    <div class="pwm-heading">
+                        <div>
+                            <h3>PWM4</h3>
+                            <p>GPIO5 / D3</p>
+                        </div>
+
+                        <output id="pwmValue3">0%</output>
+                    </div>
+
+                    <input
+                        id="pwmSlider3"
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value="0"
+                        aria-label="PWM4"
+                    >
+                </article>
+            </div>
+        </section>
+
+        <section class="card">
+            <div class="section-header">
+                <div>
+                    <p class="eyebrow">Magistrala 1-Wire</p>
+                    <h2>Temperatura</h2>
+                </div>
+
+                <span id="temperatureCount" class="section-note">
+                    0 czujników
+                </span>
+            </div>
+
+            <div
+                id="temperatureSensors"
+                class="temperature-grid"
+            >
+                <div class="empty-state">
+                    Oczekiwanie na dane temperatury
+                </div>
+            </div>
+        </section>
+
+        <section class="card danger-card">
+            <div>
+                <p class="eyebrow">Zarządzanie</p>
+                <h2>Restart urządzenia</h2>
+                <p class="danger-description">
+                    Restart trwa kilka sekund. Ustawienia PWM zapisane
+                    w NVS zostaną odtworzone po uruchomieniu.
+                </p>
+            </div>
+
+            <button
+                id="restartButton"
+                type="button"
+                class="restart-button"
+            >
+                Restart ESP32
+            </button>
+        </section>
+
+        <div
+            id="message"
+            class="message"
+            role="status"
+            aria-live="polite"
+        ></div>
+    </main>
+
+    <script src="/app.js"></script>
+</body>
+</html>
