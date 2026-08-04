@@ -100,5 +100,8 @@ void device_update_temperature_sensor(
 
 const device_state_t *device_get_state(void);
 
+void device_set_mqtt_connected(
+    bool connected
+);
 
 #endif

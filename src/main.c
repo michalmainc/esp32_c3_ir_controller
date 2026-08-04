@@ -14,6 +14,8 @@
 #include "device/device.h"
 #include "temperature/temperature_manager.h"
 
+#include "mqtt/mqtt_manager.h"
+
 
 static const char *TAG = "MAIN";
 
@@ -150,6 +152,32 @@ void app_main(void)
         ESP_LOGE(
             TAG,
             "Nie udalo sie uruchomic Wi-Fi: %s",
+            esp_err_to_name(result)
+        );
+
+        return;
+    }
+
+    result = wifi_manager_wait_connected(15000);
+
+    if (result != ESP_OK)
+    {
+        ESP_LOGE(
+            TAG,
+            "Wi-Fi nie uzyskalo adresu IP: %s",
+            esp_err_to_name(result)
+        );
+
+        return;
+    }
+
+    result = mqtt_manager_init();
+
+    if (result != ESP_OK)
+    {
+        ESP_LOGE(
+            TAG,
+            "Nie udalo sie uruchomic MQTT: %s",
             esp_err_to_name(result)
         );
 

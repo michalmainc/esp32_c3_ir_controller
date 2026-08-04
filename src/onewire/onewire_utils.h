@@ -7,7 +7,7 @@
 #include "esp_err.h"
 
 
-#define ONEWIRE_ADDRESS_STRING_SIZE 17
+#define ONEWIRE_ADDRESS_STRING_SIZE 15
 
 
 esp_err_t onewire_address_to_string(

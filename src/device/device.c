@@ -264,3 +264,10 @@ void device_update_temperature_sensor(
         device_state.temperature.count = index + 1;
     }
 }
+
+void device_set_mqtt_connected(
+    bool connected
+)
+{
+    device_state.mqtt.connected = connected;
+}

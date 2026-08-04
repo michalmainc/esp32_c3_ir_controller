@@ -21,5 +21,8 @@ esp_err_t wifi_manager_get_rssi(
     int8_t *rssi
 );
 
+esp_err_t wifi_manager_wait_connected(
+    uint32_t timeout_ms
+);
 
 #endif

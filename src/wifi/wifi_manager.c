@@ -305,3 +305,28 @@ esp_err_t wifi_manager_get_rssi(
 
     return ESP_OK;
 }
+
+esp_err_t wifi_manager_wait_connected(
+    uint32_t timeout_ms
+)
+{
+    if (wifi_event_group == NULL)
+    {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    EventBits_t bits = xEventGroupWaitBits(
+        wifi_event_group,
+        WIFI_CONNECTED_BIT,
+        pdFALSE,
+        pdTRUE,
+        pdMS_TO_TICKS(timeout_ms)
+    );
+
+    if ((bits & WIFI_CONNECTED_BIT) == 0)
+    {
+        return ESP_ERR_TIMEOUT;
+    }
+
+    return ESP_OK;
+}

@@ -12,6 +12,7 @@ idf_component_register(
         "web/web_api.c"
         "web/web_json.c"
         "web/generated_assets.c"
+        "mqtt/mqtt_manager.c"
 
     INCLUDE_DIRS
         "."
@@ -22,6 +23,7 @@ idf_component_register(
         "onewire"
         "temperature"
         "web"
+        "mqtt"
 
     REQUIRES
         nvs_flash

@@ -29,15 +29,15 @@ esp_err_t onewire_address_to_string(
     int written = snprintf(
         buffer,
         buffer_size,
-        "%02X%02X%02X%02X%02X%02X%02X%02X",
+        "%02X%02X%02X%02X%02X%02X%02X",
         (unsigned int)((address >> 0)  & 0xFF),
         (unsigned int)((address >> 8)  & 0xFF),
         (unsigned int)((address >> 16) & 0xFF),
         (unsigned int)((address >> 24) & 0xFF),
         (unsigned int)((address >> 32) & 0xFF),
         (unsigned int)((address >> 40) & 0xFF),
-        (unsigned int)((address >> 48) & 0xFF),
-        (unsigned int)((address >> 56) & 0xFF)
+        (unsigned int)((address >> 48) & 0xFF)
+        // (unsigned int)((address >> 56) & 0xFF)
     );
 
     if (
