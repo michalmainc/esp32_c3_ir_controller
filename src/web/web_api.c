@@ -16,6 +16,8 @@
 #include "relay/relay.h"
 #include "cJSON.h"
 
+#include "mqtt/mqtt_manager.h"
+
 
 static const char *TAG = "WEB_API";
 
@@ -269,6 +271,21 @@ static esp_err_t relay_handler(httpd_req_t *request)
 
         return result;
     }
+    
+    esp_err_t mqtt_result =
+        mqtt_manager_publish_status();
+
+    if (
+        mqtt_result != ESP_OK &&
+        mqtt_result != ESP_ERR_INVALID_STATE
+    )
+    {
+        ESP_LOGW(
+            TAG,
+            "Nie mozna natychmiast opublikowac statusu MQTT: %s",
+            esp_err_to_name(mqtt_result)
+        );
+    }    
 
     httpd_resp_set_type(
         request,

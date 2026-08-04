@@ -10,4 +10,6 @@ esp_err_t mqtt_manager_init(void);
 
 bool mqtt_manager_is_connected(void);
 
+esp_err_t mqtt_manager_publish_status(void);
+
 #endif

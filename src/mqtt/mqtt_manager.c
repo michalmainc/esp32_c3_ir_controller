@@ -279,7 +279,7 @@ static esp_err_t mqtt_handle_relay_command(
 }
 
 
-static esp_err_t mqtt_publish_status(void)
+esp_err_t mqtt_manager_publish_status(void)
 {
     if (
         mqtt_client == NULL ||
@@ -351,7 +351,7 @@ static void mqtt_status_task(void *parameter)
         if (mqtt_connected)
         {
             esp_err_t result =
-                mqtt_publish_status();
+                mqtt_manager_publish_status();
 
             if (
                 result != ESP_OK &&
@@ -449,7 +449,7 @@ static void mqtt_event_handler(
                 );
             }
 
-            mqtt_publish_status();
+            mqtt_manager_publish_status();
             break;
         }
 
@@ -523,7 +523,7 @@ static void mqtt_event_handler(
                  * Po poprawnej komendzie publikujemy stan
                  * natychmiast, bez czekania 10 sekund.
                  */
-                mqtt_publish_status();
+                mqtt_manager_publish_status();
             }
 
             break;

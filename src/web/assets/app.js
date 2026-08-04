@@ -593,6 +593,8 @@ async function setRelay(channel, state) {
             relay: [relayState]
         });
 
+        await loadStatus();
+
         setMessage(
             `Relay${channel + 1} ustawiono na ${state ? "ON" : "OFF"}`,
             "success"
