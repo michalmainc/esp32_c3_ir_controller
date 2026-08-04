@@ -13,6 +13,8 @@ idf_component_register(
         "web/web_json.c"
         "web/generated_assets.c"
         "mqtt/mqtt_manager.c"
+        "relay/relay.c"
+        "device/device_commands.c"
 
     INCLUDE_DIRS
         "."
@@ -24,6 +26,7 @@ idf_component_register(
         "temperature"
         "web"
         "mqtt"
+        "relay"
 
     REQUIRES
         nvs_flash
@@ -31,5 +34,6 @@ idf_component_register(
         esp_event
         esp_netif
         esp_http_server
+        esp_driver_gpio
 
 )

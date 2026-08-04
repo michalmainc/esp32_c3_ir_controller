@@ -8,6 +8,7 @@
 #include "esp_err.h"
 
 #include "config/config.h"
+#include "relay/relay.h"
 
 
 #define DEVICE_MAX_TEMPERATURE_SENSORS 8
@@ -42,6 +43,7 @@ typedef struct
     struct
     {
         uint8_t pwm[PWM_CHANNELS];
+        bool relay[RELAY_CHANNELS];
 
     } outputs;
 
@@ -102,6 +104,15 @@ const device_state_t *device_get_state(void);
 
 void device_set_mqtt_connected(
     bool connected
+);
+
+void device_set_relay(
+    uint8_t channel,
+    bool enabled
+);
+
+bool device_get_relay(
+    uint8_t channel
 );
 
 #endif

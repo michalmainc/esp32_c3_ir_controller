@@ -271,3 +271,30 @@ void device_set_mqtt_connected(
 {
     device_state.mqtt.connected = connected;
 }
+
+void device_set_relay(
+    uint8_t channel,
+    bool enabled
+)
+{
+    if (channel >= RELAY_CHANNELS)
+    {
+        return;
+    }
+
+    device_state.outputs.relay[channel] =
+        enabled;
+}
+
+
+bool device_get_relay(
+    uint8_t channel
+)
+{
+    if (channel >= RELAY_CHANNELS)
+    {
+        return false;
+    }
+
+    return device_state.outputs.relay[channel];
+}

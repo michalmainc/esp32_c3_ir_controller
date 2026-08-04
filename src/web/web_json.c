@@ -154,6 +154,43 @@ static cJSON *build_outputs_json(
         pwm
     );
 
+    cJSON *relay = cJSON_CreateArray();
+
+    if (relay == NULL)
+    {
+        cJSON_Delete(outputs);
+        return NULL;
+    }
+
+    for (
+        uint8_t channel = 0;
+        channel < RELAY_CHANNELS;
+        channel++
+    )
+    {
+        cJSON *state_json = cJSON_CreateBool(
+            state->outputs.relay[channel]
+        );
+
+        if (state_json == NULL)
+        {
+            cJSON_Delete(relay);
+            cJSON_Delete(outputs);
+            return NULL;
+        }
+
+        cJSON_AddItemToArray(
+            relay,
+            state_json
+        );
+    }
+
+    cJSON_AddItemToObject(
+        outputs,
+        "relay",
+        relay
+    );
+
     return outputs;
 }
 

@@ -15,6 +15,7 @@
 #include "temperature/temperature_manager.h"
 
 #include "mqtt/mqtt_manager.h"
+#include "relay/relay.h"
 
 
 static const char *TAG = "MAIN";
@@ -85,6 +86,19 @@ void app_main(void)
         ESP_LOGE(
             TAG,
             "Nie udalo sie uruchomic PWM: %s",
+            esp_err_to_name(result)
+        );
+
+        return;
+    }
+
+    result = relay_init();
+
+    if (result != ESP_OK)
+    {
+        ESP_LOGE(
+            TAG,
+            "Nie udalo sie uruchomic przekaznika: %s",
             esp_err_to_name(result)
         );
 

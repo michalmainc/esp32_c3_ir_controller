@@ -17,6 +17,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "device/device_commands.h"
+
 
 #define MQTT_STATUS_INTERVAL_MS 10000
 #define MQTT_TASK_STACK_SIZE    4096
@@ -34,6 +36,7 @@ static bool mqtt_connected = false;
 static char broker_uri[96];
 static char status_topic[MQTT_TOPIC_SIZE];
 static char pwm_command_topic[MQTT_TOPIC_SIZE];
+static char relay_command_topic[MQTT_TOPIC_SIZE];
 
 
 static bool mqtt_topic_equals(
@@ -168,6 +171,108 @@ static esp_err_t mqtt_handle_pwm_command(
         "PWM%d ustawiono przez MQTT na %d%%",
         channel_number,
         percent
+    );
+
+    return ESP_OK;
+}
+
+static esp_err_t mqtt_handle_relay_command(
+    const char *payload
+)
+{
+    if (payload == NULL)
+    {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    cJSON *root = cJSON_Parse(payload);
+
+    if (root == NULL)
+    {
+        ESP_LOGW(
+            TAG,
+            "Nieprawidlowy JSON komendy relay"
+        );
+
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    const cJSON *channel_json =
+        cJSON_GetObjectItemCaseSensitive(
+            root,
+            "channel"
+        );
+
+    const cJSON *state_json =
+        cJSON_GetObjectItemCaseSensitive(
+            root,
+            "state"
+        );
+
+    if (
+        !cJSON_IsNumber(channel_json) ||
+        !cJSON_IsBool(state_json)
+    )
+    {
+        ESP_LOGW(
+            TAG,
+            "Komenda relay wymaga pol channel i state"
+        );
+
+        cJSON_Delete(root);
+
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    int channel_number =
+        channel_json->valueint;
+
+    if (
+        channel_number < 1 ||
+        channel_number > RELAY_CHANNELS
+    )
+    {
+        ESP_LOGW(
+            TAG,
+            "Nieprawidlowy kanal relay: %d",
+            channel_number
+        );
+
+        cJSON_Delete(root);
+
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    bool enabled = cJSON_IsTrue(state_json);
+
+    uint8_t internal_channel =
+        (uint8_t)(channel_number - 1);
+
+    esp_err_t result =
+        device_command_set_relay(
+            internal_channel,
+            enabled
+        );
+
+    cJSON_Delete(root);
+
+    if (result != ESP_OK)
+    {
+        ESP_LOGE(
+            TAG,
+            "Nie mozna ustawic Relay%d przez MQTT: %s",
+            channel_number,
+            esp_err_to_name(result)
+        );
+
+        return result;
+    }
+
+    ESP_LOGI(
+        TAG,
+        "Relay%d ustawiono przez MQTT na %s",
+        channel_number,
+        enabled ? "ON" : "OFF"
     );
 
     return ESP_OK;
@@ -319,6 +424,30 @@ static void mqtt_event_handler(
                     message_id
                 );
             }
+            message_id =
+                esp_mqtt_client_subscribe(
+                    mqtt_client,
+                    relay_command_topic,
+                    1
+                );
+
+            if (message_id < 0)
+            {
+                ESP_LOGE(
+                    TAG,
+                    "Nie mozna zasubskrybowac %s",
+                    relay_command_topic
+                );
+            }
+            else
+            {
+                ESP_LOGI(
+                    TAG,
+                    "Subskrypcja: %s, msg_id=%d",
+                    relay_command_topic,
+                    message_id
+                );
+            }
 
             mqtt_publish_status();
             break;
@@ -326,11 +455,21 @@ static void mqtt_event_handler(
 
         case MQTT_EVENT_DATA:
         {
-            if (
-                !mqtt_topic_equals(
+            bool is_pwm_command =
+                mqtt_topic_equals(
                     event,
                     pwm_command_topic
-                )
+                );
+
+            bool is_relay_command =
+                mqtt_topic_equals(
+                    event,
+                    relay_command_topic
+                );
+
+            if (
+                !is_pwm_command &&
+                !is_relay_command
             )
             {
                 break;
@@ -365,8 +504,18 @@ static void mqtt_event_handler(
 
             payload[event->data_len] = '\0';
 
-            esp_err_t result =
-                mqtt_handle_pwm_command(payload);
+            esp_err_t result;
+
+            if (is_pwm_command)
+            {
+                result =
+                    mqtt_handle_pwm_command(payload);
+            }
+            else
+            {
+                result =
+                    mqtt_handle_relay_command(payload);
+            }
 
             if (result == ESP_OK)
             {
@@ -467,6 +616,21 @@ esp_err_t mqtt_manager_init(void)
         config->device_name
     );
 
+    written = snprintf(
+        relay_command_topic,
+        sizeof(relay_command_topic),
+        "%s/command/relay",
+        config->device_name
+    );
+
+    if (
+        written < 0 ||
+        written >= (int)sizeof(relay_command_topic)
+    )
+    {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
     if (
         written < 0 ||
         written >= (int)sizeof(pwm_command_topic)
@@ -551,6 +715,12 @@ esp_err_t mqtt_manager_init(void)
         TAG,
         "Temat komend PWM: %s",
         pwm_command_topic
+    );
+
+    ESP_LOGI(
+        TAG,
+        "Temat komend Relay: %s",
+        relay_command_topic
     );
 
     return ESP_OK;

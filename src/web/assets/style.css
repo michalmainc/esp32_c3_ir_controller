@@ -463,3 +463,44 @@ input[type="range"] {
         overflow-wrap: anywhere;
     }
 }
+
+.relay-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+
+    padding: 16px;
+
+    border: 1px solid var(--border);
+    border-radius: var(--radius-medium);
+
+    background: var(--surface-secondary);
+}
+
+.relay-button {
+    min-width: 110px;
+    padding: 13px 22px;
+
+    border: 0;
+    border-radius: 10px;
+
+    color: #ffffff;
+
+    font-size: 17px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.relay-on {
+    background: var(--success);
+}
+
+.relay-off {
+    background: #4b525d;
+}
+
+.relay-button:disabled {
+    opacity: 0.55;
+    cursor: default;
+}

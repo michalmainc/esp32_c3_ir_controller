@@ -9,6 +9,8 @@ const pwmEditing = Array(PWM_CHANNEL_COUNT).fill(false);
 
 let statusInterval = null;
 
+let relayState = false;
+
 
 function getElement(id) {
     return document.getElementById(id);
@@ -350,6 +352,7 @@ async function loadStatus() {
         updateWifi(data.wifi);
         updateMqtt(data.mqtt);
         updatePwm(data.outputs);
+        updateRelay(data.outputs);
         updateTemperatures(data.temperature);
         updateSystem(data.system);
 
@@ -502,6 +505,18 @@ function initializePage() {
         restartDevice
     );
 
+    getElement(
+        "relayButton0"
+    ).addEventListener(
+        "click",
+        () => {
+            setRelay(
+                0,
+                !relayState
+            );
+        }
+    );
+
     loadStatus();
 
     statusInterval = setInterval(
@@ -515,3 +530,81 @@ window.addEventListener(
     "DOMContentLoaded",
     initializePage
 );
+
+function updateRelay(outputs) {
+    const relay = outputs?.relay;
+
+    if (
+        !Array.isArray(relay) ||
+        relay.length < 1
+    ) {
+        return;
+    }
+
+    relayState = Boolean(relay[0]);
+
+    const button = getElement("relayButton0");
+
+    button.textContent =
+        relayState ? "ON" : "OFF";
+
+    button.classList.toggle(
+        "relay-on",
+        relayState
+    );
+
+    button.classList.toggle(
+        "relay-off",
+        !relayState
+    );
+}
+
+async function setRelay(channel, state) {
+    const button = getElement(
+        `relayButton${channel}`
+    );
+
+    button.disabled = true;
+
+    try {
+        const response = await fetch(
+            "/api/relay",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    channel: channel + 1,
+                    state: state
+                })
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                `HTTP ${response.status}`
+            );
+        }
+
+        relayState = state;
+
+        updateRelay({
+            relay: [relayState]
+        });
+
+        setMessage(
+            `Relay${channel + 1} ustawiono na ${state ? "ON" : "OFF"}`,
+            "success"
+        );
+    } catch (error) {
+        setMessage(
+            `Błąd ustawiania Relay${channel + 1}`,
+            "error"
+        );
+
+        console.error(error);
+    } finally {
+        button.disabled = false;
+    }
+}

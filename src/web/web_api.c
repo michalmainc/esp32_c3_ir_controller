@@ -12,6 +12,10 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "device/device_commands.h"
+#include "relay/relay.h"
+#include "cJSON.h"
+
 
 static const char *TAG = "WEB_API";
 
@@ -183,6 +187,99 @@ static esp_err_t pwm_handler(httpd_req_t *request)
     );
 }
 
+static esp_err_t relay_handler(httpd_req_t *request)
+{
+    char buffer[96];
+
+    int length = httpd_req_recv(
+        request,
+        buffer,
+        sizeof(buffer) - 1
+    );
+
+    if (length <= 0)
+    {
+        httpd_resp_send_err(
+            request,
+            HTTPD_400_BAD_REQUEST,
+            "Brak danych"
+        );
+
+        return ESP_FAIL;
+    }
+
+    buffer[length] = '\0';
+
+    cJSON *root = cJSON_Parse(buffer);
+
+    if (root == NULL)
+    {
+        httpd_resp_send_err(
+            request,
+            HTTPD_400_BAD_REQUEST,
+            "Nieprawidlowy JSON"
+        );
+
+        return ESP_FAIL;
+    }
+
+    const cJSON *channel =
+        cJSON_GetObjectItem(
+            root,
+            "channel"
+        );
+
+    const cJSON *state =
+        cJSON_GetObjectItem(
+            root,
+            "state"
+        );
+
+    if (
+        !cJSON_IsNumber(channel) ||
+        !cJSON_IsBool(state)
+    )
+    {
+        cJSON_Delete(root);
+
+        httpd_resp_send_err(
+            request,
+            HTTPD_400_BAD_REQUEST,
+            "Brak channel/state"
+        );
+
+        return ESP_FAIL;
+    }
+
+    esp_err_t result =
+        device_command_set_relay(
+            channel->valueint - 1,
+            cJSON_IsTrue(state)
+        );
+
+    cJSON_Delete(root);
+
+    if (result != ESP_OK)
+    {
+        httpd_resp_send_err(
+            request,
+            HTTPD_500_INTERNAL_SERVER_ERROR,
+            "Blad relay"
+        );
+
+        return result;
+    }
+
+    httpd_resp_set_type(
+        request,
+        "application/json"
+    );
+
+    return httpd_resp_sendstr(
+        request,
+        "{\"status\":\"ok\"}"
+    );
+}
 
 static esp_err_t restart_handler(httpd_req_t *request)
 {
@@ -308,6 +405,23 @@ esp_err_t web_api_register(httpd_handle_t server)
     result = httpd_register_uri_handler(
         server,
         &pwm_uri
+    );
+
+    if (result != ESP_OK)
+    {
+        return result;
+    }
+
+    const httpd_uri_t relay_uri = {
+        .uri = "/api/relay",
+        .method = HTTP_POST,
+        .handler = relay_handler,
+        .user_ctx = NULL
+    };
+
+    result = httpd_register_uri_handler(
+        server,
+        &relay_uri
     );
 
     if (result != ESP_OK)
