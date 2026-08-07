@@ -30,7 +30,7 @@ static void load_defaults(void)
 
     strcpy(
         device_config.device_name,
-        "esp32_c3"
+        "esp32_c3_biala"
     );
 
     device_config.latitude = 52.8597009f;
