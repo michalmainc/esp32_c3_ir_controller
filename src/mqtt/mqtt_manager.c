@@ -39,6 +39,7 @@ static char status_topic[MQTT_TOPIC_SIZE];
 static char pwm_command_topic[MQTT_TOPIC_SIZE];
 static char relay_command_topic[MQTT_TOPIC_SIZE];
 static char restart_command_topic[MQTT_TOPIC_SIZE];
+static char availability_topic[MQTT_TOPIC_SIZE];
 
 static bool mqtt_topic_equals(
     const esp_mqtt_event_handle_t event,
@@ -446,6 +447,32 @@ static void mqtt_event_handler(
                 "Polaczono z brokerem MQTT"
             );
 
+            int availability_message_id =
+                esp_mqtt_client_publish(
+                    mqtt_client,
+                    availability_topic,
+                    "online",
+                    0,
+                    1,
+                    1
+                );
+
+            if (availability_message_id < 0)
+            {
+                ESP_LOGE(
+                    TAG,
+                    "Nie mozna opublikowac availability"
+                );
+            }
+            else
+            {
+                ESP_LOGI(
+                    TAG,
+                    "Availability: online, msg_id=%d",
+                    availability_message_id
+                );
+            }
+
             int message_id =
                 esp_mqtt_client_subscribe(
                     mqtt_client,
@@ -713,6 +740,13 @@ esp_err_t mqtt_manager_init(void)
         config->device_name
     );
 
+    written = snprintf(
+        availability_topic,
+        sizeof(availability_topic),
+        "%s/availability",
+        config->device_name
+    );
+
     if (
         written < 0 ||
         written >= (int)sizeof(relay_command_topic)
@@ -737,8 +771,22 @@ esp_err_t mqtt_manager_init(void)
         return ESP_ERR_INVALID_SIZE;
     }
 
+    if (
+        written < 0 ||
+        written >= (int)sizeof(availability_topic)
+    )
+    {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
     esp_mqtt_client_config_t mqtt_config = {
-        .broker.address.uri = broker_uri
+        .broker.address.uri = broker_uri,
+
+        .session.last_will.topic = availability_topic,
+        .session.last_will.msg = "offline",
+        .session.last_will.msg_len = 0,
+        .session.last_will.qos = 1,
+        .session.last_will.retain = true
     };
 
     mqtt_client = esp_mqtt_client_init(
@@ -819,6 +867,18 @@ esp_err_t mqtt_manager_init(void)
         TAG,
         "Temat komend Relay: %s",
         relay_command_topic
+    );
+
+    ESP_LOGI(
+        TAG,
+        "Temat komendy restart: %s",
+        restart_command_topic
+    );
+
+    ESP_LOGI(
+        TAG,
+        "Temat availability: %s",
+        availability_topic
     );
 
     return ESP_OK;
