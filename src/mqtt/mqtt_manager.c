@@ -12,6 +12,7 @@
 
 #include "esp_event.h"
 #include "esp_log.h"
+#include "esp_system.h"
 #include "mqtt_client.h"
 
 #include "freertos/FreeRTOS.h"
@@ -37,7 +38,7 @@ static char broker_uri[96];
 static char status_topic[MQTT_TOPIC_SIZE];
 static char pwm_command_topic[MQTT_TOPIC_SIZE];
 static char relay_command_topic[MQTT_TOPIC_SIZE];
-
+static char restart_command_topic[MQTT_TOPIC_SIZE];
 
 static bool mqtt_topic_equals(
     const esp_mqtt_event_handle_t event,
@@ -147,7 +148,7 @@ static esp_err_t mqtt_handle_pwm_command(
     uint8_t internal_channel =
         (uint8_t)(channel_number - 1);
 
-    esp_err_t result = device_set_pwm(
+    esp_err_t result = device_command_set_pwm(
         internal_channel,
         (uint8_t)percent
     );
@@ -278,6 +279,51 @@ static esp_err_t mqtt_handle_relay_command(
     return ESP_OK;
 }
 
+static void mqtt_restart_task(void *parameter)
+{
+    (void)parameter;
+
+    vTaskDelay(
+        pdMS_TO_TICKS(1000)
+    );
+
+    ESP_LOGW(
+        TAG,
+        "Restart ukladu przez MQTT"
+    );
+
+    esp_restart();
+}
+
+
+static esp_err_t mqtt_handle_restart_command(void)
+{
+    BaseType_t result = xTaskCreate(
+        mqtt_restart_task,
+        "mqtt_restart_task",
+        2048,
+        NULL,
+        10,
+        NULL
+    );
+
+    if (result != pdPASS)
+    {
+        ESP_LOGE(
+            TAG,
+            "Nie mozna utworzyc zadania restartu"
+        );
+
+        return ESP_FAIL;
+    }
+
+    ESP_LOGW(
+        TAG,
+        "Odebrano polecenie restartu przez MQTT"
+    );
+
+    return ESP_OK;
+}
 
 esp_err_t mqtt_manager_publish_status(void)
 {
@@ -424,6 +470,7 @@ static void mqtt_event_handler(
                     message_id
                 );
             }
+
             message_id =
                 esp_mqtt_client_subscribe(
                     mqtt_client,
@@ -449,6 +496,31 @@ static void mqtt_event_handler(
                 );
             }
 
+                        message_id =
+                esp_mqtt_client_subscribe(
+                    mqtt_client,
+                    restart_command_topic,
+                    1
+                );
+
+            if (message_id < 0)
+            {
+                ESP_LOGE(
+                    TAG,
+                    "Nie mozna zasubskrybowac %s",
+                    restart_command_topic
+                );
+            }
+            else
+            {
+                ESP_LOGI(
+                    TAG,
+                    "Subskrypcja: %s, msg_id=%d",
+                    restart_command_topic,
+                    message_id
+                );
+            }
+
             mqtt_manager_publish_status();
             break;
         }
@@ -466,10 +538,16 @@ static void mqtt_event_handler(
                     event,
                     relay_command_topic
                 );
+            bool is_restart_command =
+                mqtt_topic_equals(
+                event,
+                restart_command_topic
+                );
 
             if (
                 !is_pwm_command &&
-                !is_relay_command
+                !is_relay_command &&
+                !is_restart_command
             )
             {
                 break;
@@ -511,10 +589,15 @@ static void mqtt_event_handler(
                 result =
                     mqtt_handle_pwm_command(payload);
             }
-            else
+            else if (is_relay_command)
             {
                 result =
                     mqtt_handle_relay_command(payload);
+            }
+            else
+            {
+                result =
+                    mqtt_handle_restart_command();
             }
 
             if (result == ESP_OK)
@@ -623,6 +706,13 @@ esp_err_t mqtt_manager_init(void)
         config->device_name
     );
 
+    written = snprintf(
+        restart_command_topic,
+        sizeof(restart_command_topic),
+        "%s/command/restart",
+        config->device_name
+    );
+
     if (
         written < 0 ||
         written >= (int)sizeof(relay_command_topic)
@@ -634,6 +724,14 @@ esp_err_t mqtt_manager_init(void)
     if (
         written < 0 ||
         written >= (int)sizeof(pwm_command_topic)
+    )
+    {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    if (
+        written < 0 ||
+        written >= (int)sizeof(restart_command_topic)
     )
     {
         return ESP_ERR_INVALID_SIZE;

@@ -1,12 +1,39 @@
 #include "device_commands.h"
 
 #include "device.h"
+
 #include "relay/relay.h"
 
 #include "esp_log.h"
 
 
 static const char *TAG = "DEVICE_CMD";
+
+
+esp_err_t device_command_set_pwm(
+    uint8_t channel,
+    uint8_t percent
+)
+{
+    esp_err_t result = device_set_pwm(
+        channel,
+        percent
+    );
+
+    if (result != ESP_OK)
+    {
+        return result;
+    }
+
+    ESP_LOGI(
+        TAG,
+        "PWM%d -> %d%%",
+        channel + 1,
+        percent
+    );
+
+    return ESP_OK;
+}
 
 
 esp_err_t device_command_set_relay(

@@ -138,7 +138,7 @@ static esp_err_t pwm_handler(httpd_req_t *request)
         return ESP_FAIL;
     }
 
-    result = device_set_pwm(
+    result = device_command_set_pwm(
         (uint8_t)channel,
         (uint8_t)percent
     );
