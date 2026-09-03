@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include <string.h>
+#include <stdio.h>
 
 #include "esp_log.h"
 #include "nvs.h"
@@ -11,6 +12,8 @@
 
 
 #define NVS_NAMESPACE        "config"
+#define RELAY_NAMES_NAMESPACE "relay_names"
+#define TEMPERATURE_NAMES_NAMESPACE "temp_names"
 #define CONFIG_SAVE_DELAY_MS 5000
 
 
@@ -263,4 +266,237 @@ esp_err_t config_set_pwm_value(
     );
 
     return ESP_OK;
+}
+
+esp_err_t config_get_relay_name(
+    uint8_t channel,
+    char *name,
+    size_t name_size
+)
+{
+    nvs_handle_t handle;
+    esp_err_t err;
+
+    if (
+        name == NULL ||
+        name_size == 0
+    )
+    {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    char key[8];
+
+    snprintf(
+        key,
+        sizeof(key),
+        "r%u",
+        channel + 1
+    );
+
+    err = nvs_open(
+        RELAY_NAMES_NAMESPACE,
+        NVS_READONLY,
+        &handle
+    );
+
+    if (err != ESP_OK)
+    {
+        snprintf(
+            name,
+            name_size,
+            "Relay%u",
+            channel + 1
+        );
+
+        return ESP_OK;
+    }
+
+    size_t required_size = name_size;
+
+    err = nvs_get_str(
+        handle,
+        key,
+        name,
+        &required_size
+    );
+
+    nvs_close(handle);
+
+    if (err == ESP_ERR_NVS_NOT_FOUND)
+    {
+        snprintf(
+            name,
+            name_size,
+            "Relay%u",
+            channel + 1
+        );
+
+        return ESP_OK;
+    }
+
+    return err;
+}
+
+esp_err_t config_set_relay_name(
+    uint8_t channel,
+    const char *name
+)
+{
+    nvs_handle_t handle;
+    esp_err_t err;
+
+    if (
+        name == NULL ||
+        name[0] == '\0'
+    )
+    {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    char key[8];
+
+    snprintf(
+        key,
+        sizeof(key),
+        "r%u",
+        channel + 1
+    );
+
+    err = nvs_open(
+        RELAY_NAMES_NAMESPACE,
+        NVS_READWRITE,
+        &handle
+    );
+
+    if (err != ESP_OK)
+    {
+        return err;
+    }
+
+    err = nvs_set_str(
+        handle,
+        key,
+        name
+    );
+
+    if (err == ESP_OK)
+    {
+        err = nvs_commit(handle);
+    }
+
+    nvs_close(handle);
+
+    return err;
+}
+
+esp_err_t config_get_temperature_name(
+    const char *address,
+    char *name,
+    size_t name_size
+)
+{
+    nvs_handle_t handle;
+    esp_err_t err;
+
+    if (
+        address == NULL ||
+        name == NULL ||
+        name_size == 0
+    )
+    {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    err = nvs_open(
+        TEMPERATURE_NAMES_NAMESPACE,
+        NVS_READONLY,
+        &handle
+    );
+
+    if (err != ESP_OK)
+    {
+        snprintf(
+            name,
+            name_size,
+            "%s",
+            address
+        );
+
+        return ESP_OK;
+    }
+
+    size_t required_size = name_size;
+
+    err = nvs_get_str(
+        handle,
+        address,
+        name,
+        &required_size
+    );
+
+    nvs_close(handle);
+
+    if (err == ESP_ERR_NVS_NOT_FOUND)
+    {
+        snprintf(
+            name,
+            name_size,
+            "%s",
+            address
+        );
+
+        return ESP_OK;
+    }
+
+    return err;
+}
+
+esp_err_t config_set_temperature_name(
+    const char *address,
+    const char *name
+)
+{
+    nvs_handle_t handle;
+    esp_err_t err;
+
+    if (
+        address == NULL ||
+        name == NULL ||
+        name[0] == '\0'
+    )
+    {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (strlen(address) != 14)
+    {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    err = nvs_open(
+        TEMPERATURE_NAMES_NAMESPACE,
+        NVS_READWRITE,
+        &handle
+    );
+
+    if (err != ESP_OK)
+    {
+        return err;
+    }
+
+    err = nvs_set_str(
+        handle,
+        address,
+        name
+    );
+
+    if (err == ESP_OK)
+    {
+        err = nvs_commit(handle);
+    }
+
+    nvs_close(handle);
+
+    return err;
 }

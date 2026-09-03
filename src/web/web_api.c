@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 #include "device/device.h"
+#include "config/config.h"
 
 #include "esp_log.h"
 #include "esp_system.h"
@@ -298,6 +299,200 @@ static esp_err_t relay_handler(httpd_req_t *request)
     );
 }
 
+static esp_err_t relay_name_handler(
+    httpd_req_t *request
+)
+{
+    char buffer[128];
+
+    int length = httpd_req_recv(
+        request,
+        buffer,
+        sizeof(buffer) - 1
+    );
+
+    if (length <= 0)
+    {
+        httpd_resp_send_err(
+            request,
+            HTTPD_400_BAD_REQUEST,
+            "Brak danych"
+        );
+
+        return ESP_FAIL;
+    }
+
+    buffer[length] = '\0';
+
+    cJSON *root = cJSON_Parse(buffer);
+
+    if (root == NULL)
+    {
+        httpd_resp_send_err(
+            request,
+            HTTPD_400_BAD_REQUEST,
+            "Nieprawidlowy JSON"
+        );
+
+        return ESP_FAIL;
+    }
+
+    const cJSON *channel =
+        cJSON_GetObjectItem(
+            root,
+            "channel"
+        );
+
+    const cJSON *name =
+        cJSON_GetObjectItem(
+            root,
+            "name"
+        );
+
+    if (
+        !cJSON_IsNumber(channel) ||
+        !cJSON_IsString(name) ||
+        channel->valueint < 1 ||
+        channel->valueint > RELAY_CHANNELS
+    )
+    {
+        cJSON_Delete(root);
+
+        httpd_resp_send_err(
+            request,
+            HTTPD_400_BAD_REQUEST,
+            "Nieprawidlowy channel/name"
+        );
+
+        return ESP_FAIL;
+    }
+
+    esp_err_t result =
+        config_set_relay_name(
+            channel->valueint - 1,
+            name->valuestring
+        );
+
+    cJSON_Delete(root);
+
+    if (result != ESP_OK)
+    {
+        httpd_resp_send_err(
+            request,
+            HTTPD_500_INTERNAL_SERVER_ERROR,
+            "Blad zapisu nazwy"
+        );
+
+        return result;
+    }
+
+    httpd_resp_set_type(
+        request,
+        "application/json"
+    );
+
+    return httpd_resp_sendstr(
+        request,
+        "{\"status\":\"ok\"}"
+    );
+}
+
+static esp_err_t temperature_name_handler(
+    httpd_req_t *request
+)
+{
+    char buffer[160];
+
+    int length = httpd_req_recv(
+        request,
+        buffer,
+        sizeof(buffer) - 1
+    );
+
+    if (length <= 0)
+    {
+        httpd_resp_send_err(
+            request,
+            HTTPD_400_BAD_REQUEST,
+            "Brak danych"
+        );
+
+        return ESP_FAIL;
+    }
+
+    buffer[length] = '\0';
+
+    cJSON *root = cJSON_Parse(buffer);
+
+    if (root == NULL)
+    {
+        httpd_resp_send_err(
+            request,
+            HTTPD_400_BAD_REQUEST,
+            "Nieprawidlowy JSON"
+        );
+
+        return ESP_FAIL;
+    }
+
+    const cJSON *address =
+        cJSON_GetObjectItem(
+            root,
+            "address"
+        );
+
+    const cJSON *name =
+        cJSON_GetObjectItem(
+            root,
+            "name"
+        );
+
+    if (
+        !cJSON_IsString(address) ||
+        !cJSON_IsString(name)
+    )
+    {
+        cJSON_Delete(root);
+
+        httpd_resp_send_err(
+            request,
+            HTTPD_400_BAD_REQUEST,
+            "Brak address/name"
+        );
+
+        return ESP_FAIL;
+    }
+
+    esp_err_t result =
+        config_set_temperature_name(
+            address->valuestring,
+            name->valuestring
+        );
+
+    cJSON_Delete(root);
+
+    if (result != ESP_OK)
+    {
+        httpd_resp_send_err(
+            request,
+            HTTPD_500_INTERNAL_SERVER_ERROR,
+            "Blad zapisu nazwy"
+        );
+
+        return result;
+    }
+
+    httpd_resp_set_type(
+        request,
+        "application/json"
+    );
+
+    return httpd_resp_sendstr(
+        request,
+        "{\"status\":\"ok\"}"
+    );
+}
+
 static esp_err_t restart_handler(httpd_req_t *request)
 {
     ESP_LOGW(
@@ -439,6 +634,40 @@ esp_err_t web_api_register(httpd_handle_t server)
     result = httpd_register_uri_handler(
         server,
         &relay_uri
+    );
+
+    if (result != ESP_OK)
+    {
+        return result;
+    }
+
+    const httpd_uri_t relay_name_uri = {
+        .uri = "/api/relay/name",
+        .method = HTTP_POST,
+        .handler = relay_name_handler,
+        .user_ctx = NULL
+    };
+
+    result = httpd_register_uri_handler(
+        server,
+        &relay_name_uri
+    );
+
+    if (result != ESP_OK)
+    {
+        return result;
+    }
+
+    const httpd_uri_t temperature_name_uri = {
+        .uri = "/api/temperature/name",
+        .method = HTTP_POST,
+        .handler = temperature_name_handler,
+        .user_ctx = NULL
+    };
+
+    result = httpd_register_uri_handler(
+        server,
+        &temperature_name_uri
     );
 
     if (result != ESP_OK)

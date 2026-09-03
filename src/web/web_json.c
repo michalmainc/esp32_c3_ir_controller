@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "onewire/onewire_utils.h"
+#include "config/config.h"
 
 
 static cJSON *build_device_json(
@@ -168,12 +169,50 @@ static cJSON *build_outputs_json(
         channel++
     )
     {
-        cJSON *state_json = cJSON_CreateBool(
-            state->outputs.relay[channel]
+    for (
+        uint8_t channel = 0;
+        channel < RELAY_CHANNELS;
+        channel++
+    )
+    {
+        char relay_name[32];
+
+        esp_err_t err = config_get_relay_name(
+            channel,
+            relay_name,
+            sizeof(relay_name)
         );
 
-        if (state_json == NULL)
+        if (err != ESP_OK)
         {
+            cJSON_Delete(relay);
+            cJSON_Delete(outputs);
+            return NULL;
+        }
+
+        cJSON *relay_json = cJSON_CreateObject();
+
+        if (relay_json == NULL)
+        {
+            cJSON_Delete(relay);
+            cJSON_Delete(outputs);
+            return NULL;
+        }
+
+        if (
+            cJSON_AddStringToObject(
+                relay_json,
+                "name",
+                relay_name
+            ) == NULL ||
+            cJSON_AddBoolToObject(
+                relay_json,
+                "state",
+                state->outputs.relay[channel]
+            ) == NULL
+        )
+        {
+            cJSON_Delete(relay_json);
             cJSON_Delete(relay);
             cJSON_Delete(outputs);
             return NULL;
@@ -181,8 +220,9 @@ static cJSON *build_outputs_json(
 
         cJSON_AddItemToArray(
             relay,
-            state_json
+            relay_json
         );
+    }
     }
 
     cJSON_AddItemToObject(
@@ -263,11 +303,34 @@ static cJSON *build_temperature_json(
             return NULL;
         }
 
+        char temperature_name[32];
+
+        esp_err_t name_result =
+            config_get_temperature_name(
+                address,
+                temperature_name,
+                sizeof(temperature_name)
+            );
+
+        if (name_result != ESP_OK)
+        {
+            cJSON_Delete(sensor_json);
+            cJSON_Delete(sensors);
+            cJSON_Delete(temperature);
+
+            return NULL;
+        }
+
         if (
             cJSON_AddStringToObject(
                 sensor_json,
                 "address",
                 address
+            ) == NULL ||
+            cJSON_AddStringToObject(
+                sensor_json,
+                "name",
+                temperature_name
             ) == NULL ||
             cJSON_AddBoolToObject(
                 sensor_json,

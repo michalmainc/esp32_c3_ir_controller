@@ -2,6 +2,7 @@
 #define CONFIG_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 #include "esp_err.h"
 
@@ -42,5 +43,26 @@ esp_err_t config_set_pwm_value(
     uint8_t value
 );
 
+esp_err_t config_get_relay_name(
+    uint8_t channel,
+    char *name,
+    size_t name_size
+);
+
+esp_err_t config_set_relay_name(
+    uint8_t channel,
+    const char *name
+);
+
+esp_err_t config_get_temperature_name(
+    const char *address,
+    char *name,
+    size_t name_size
+);
+
+esp_err_t config_set_temperature_name(
+    const char *address,
+    const char *name
+);
 
 #endif

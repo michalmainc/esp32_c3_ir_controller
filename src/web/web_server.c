@@ -13,6 +13,7 @@ static const char *TAG = "WEB_SERVER";
 esp_err_t web_server_start(void)
 {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    config.max_uri_handlers = 16;
     httpd_handle_t server = NULL;
 
     ESP_LOGI(TAG, "Uruchamianie serwera WWW");

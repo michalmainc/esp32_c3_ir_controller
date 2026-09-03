@@ -541,9 +541,24 @@ function updateRelay(outputs) {
         return;
     }
 
-    relayState = Boolean(relay[0]);
+    const relayData = relay[0];
 
-    const button = getElement("relayButton0");
+    relayState = Boolean(
+        relayData?.state
+    );
+
+    const name = getElement(
+        "relayName0"
+    );
+
+    const button = getElement(
+        "relayButton0"
+    );
+
+    if (name !== null) {
+        name.textContent =
+            relayData?.name || "Relay1";
+    }
 
     button.textContent =
         relayState ? "ON" : "OFF";
@@ -590,7 +605,12 @@ async function setRelay(channel, state) {
         relayState = state;
 
         updateRelay({
-            relay: [relayState]
+            relay: [{
+                name: getElement(
+                    "relayName0"
+                ).textContent,
+                state: relayState
+            }]
         });
 
         await loadStatus();
